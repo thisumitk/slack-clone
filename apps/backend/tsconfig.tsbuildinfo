@@ -1,1 +1,1 @@
-{"root":["./src/index.ts"],"version":"5.6.3"}
+{"root":["./src/index.ts","./src/prisma/client.ts","./src/routes/channels.ts","./src/routes/messages.ts","./src/routes/users.ts","./src/websocket/index.ts","./src/websocket/types.ts","./src/websocket/wshandler.ts"],"version":"5.6.3"}
