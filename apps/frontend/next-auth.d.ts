@@ -7,5 +7,9 @@ declare module "next-auth" {
       name: string | null;
       email: string | null;
     };
+    accessToken?: string;
+  }
+  interface User {
+    accessToken?: string;
   }
 }
