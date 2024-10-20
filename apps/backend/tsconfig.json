@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "Node16",
+    "target": "ESNext",
+    "module": "ESNext",
     "rootDir": "./src",
-    "moduleResolution": "node16",
+    "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
       "@repo/*": ["path/to/packages/*"]
