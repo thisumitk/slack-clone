@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import { Session, User } from "next-auth";
 import { JWT } from "next-auth/jwt";
+import jwt from 'jsonwebtoken';
 
   const credentialsScema = z.object({
 
@@ -45,10 +46,13 @@ export const authOptions = {
           if (existingUser) {
               const passwordValidation = await bcrypt.compare(password, existingUser.password);
               if (passwordValidation) {
+                      // .ENV REsolution needs to be done.
+                      const token = jwt.sign({ id : existingUser.id, email: existingUser.email}, process.env.JWT_SECRET || 'mysecret', { expiresIn : '1h'});
                   return {
                       id: existingUser.id.toString(),
                       name: existingUser.name,
-                      email: existingUser.email
+                      email: existingUser.email,
+                      accessToken : token
                   }
               }
               console.error("Invalid password for user:", email);
@@ -63,11 +67,12 @@ export const authOptions = {
                       password: hashedPassword
                   }
               });
-          
+              const token = jwt.sign({ id : user.id, email: user.email}, process.env.JWT_SECRET || 'mysecret', { expiresIn : '1h'});
               return {
                   id: user.id.toString(),
                   name: user.name,
-                  email: user.email
+                  email: user.email,
+                  accessToken : token
               }
           } catch(e) {
               console.error(e);
@@ -84,12 +89,17 @@ export const authOptions = {
     async jwt({ token, user } : { token : JWT; user? : User}) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
+        token.accessToken = user.accessToken
       }
       return token;
     },
     async session({ token, session } : { token: JWT; session: Session }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.accessToken = token.accessToken as string;
+        console.log(session);
       }
       return session;
     }
