@@ -1,34 +1,48 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 
+interface DirectMessage {
+  id: number;
+  content: string;
+  senderId: number;
+  recieverId: number;
+  createdAt: Date;
+  sender: { name: string };
+  receiver: { name: string };
+}
 interface Message {
   id: number;
   content: string;
-  user: {
+  user?: {
     name: string;
   };
 }
 
 interface ChatProps {
-  channelId: number;
+  channelId?: number | null;
   userId: number;
+  recepientId? : number;
 }
 
-const Chat: React.FC<ChatProps> = ({ channelId, userId }) => {
+const Chat: React.FC<ChatProps> = ({ channelId, userId, recepientId }) => {
   const { data: session, status } = useSession();
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState('');
   const ws = useRef<WebSocket | null>(null);
+  const isDirectMessage = !!recepientId;
 
   useEffect(() => {
-    if (session && channelId) {
+    if (session) {
       // Initialize WebSocket connection
       if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
         ws.current = new WebSocket(`ws://localhost:8080`);
 
         ws.current.onopen = () => {
           console.log('WebSocket connection opened');
-          ws.current?.send(JSON.stringify({ type: 'joinChannel', channelId }));
+          if (isDirectMessage) {
+            ws.current?.send(JSON.stringify({type : 'joinDirectMessage', recepientId}));
+          }
+          else ws.current?.send(JSON.stringify({ type: 'joinChannel', channelId }));
         };
 
         ws.current.onmessage = (event) => {
@@ -37,12 +51,14 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId }) => {
             setMessages((prevMessages) => [...prevMessages, newMessage]);
           } catch (error) {
             console.error('Error parsing WebSocket message:', error);
-            // Handle the error gracefully, e.g., show an error message to the user
           }
         };
 
         ws.current.onclose = () => {
           console.log('WebSocket connection closed. Attempting to reconnect...');
+          setTimeout(() => {
+            ws.current = new WebSocket(`ws://localhost:8080`);
+          }, 1000);
         };
 
         ws.current.onerror = (error) => {
@@ -50,26 +66,44 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId }) => {
         };
       }
 
-      // Fetch previous messages when switching channels
-      fetch(`http://localhost:8080/api/messages/${channelId}`)
-        .then((res) => res.json())
-        .then((data) => setMessages(data))
-        .catch((error) => {
-          console.error('Error fetching messages:', error);
-          // Handle the error gracefully, e.g., show an error message to the user
-        });
-
       return () => {
         if (ws.current) {
           ws.current.close();
         }
       };
     }
-  }, [channelId, session]);
+  }, [channelId, session, recepientId]);
+
+  useEffect(() => {
+    // Fetch messages when switching channels or DMs
+    const fetchMessages = async () => {
+      const endpoint = isDirectMessage
+        ? `http://localhost:8080/api/direct-messages/${userId}/${recepientId}`
+        : `http://localhost:8080/api/messages/${channelId}`;
+
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error('Failed to fetch messages');
+        const data = await res.json();
+        setMessages(data);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    fetchMessages();
+  }, [channelId, recepientId, userId, isDirectMessage]);
 
   const sendMessage = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      const messageData = {
+      const messageData = isDirectMessage
+      ? {
+        senderId : userId, 
+        recieverId: recepientId, 
+        content : message.trim(),
+      }
+
+      : {
         userId,
         channelId,
         content: message.trim(),
@@ -100,7 +134,14 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId }) => {
       <div>
         {messages.map((msg) => (
           <div key={msg.id}>
-            <strong>{msg.user.name}:</strong> {msg.content}
+            <strong>
+              {isDirectMessage
+                ? (msg as DirectMessage).senderId === userId
+                  ? 'You'
+                  : (msg as DirectMessage).sender?.name
+                : msg.user?.name} :
+            </strong>
+             {msg.content}
           </div>
         ))}
       </div>
