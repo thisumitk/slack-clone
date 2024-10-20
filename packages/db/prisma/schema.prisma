@@ -20,6 +20,8 @@ model User {
   password  String
   name    String?
   message Message []
+  sentMessages DirectMessage[] @relation("SentMessages")
+  receivedMessages DirectMessage[] @relation("ReceivedMessages")
 }
 
 model Message {
@@ -40,4 +42,16 @@ model Channel {
   name String
   messges Message[]
 
+}
+
+model DirectMessage {
+
+  id  Int @id @default(autoincrement())
+  content   String
+  senderId  Int
+  recieverId  Int
+  createdAt   DateTime @default(now())
+
+  sender    User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver  User @relation("ReceivedMessages", fields: [recieverId], references: [id])
 }
