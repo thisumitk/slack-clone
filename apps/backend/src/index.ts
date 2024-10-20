@@ -6,6 +6,8 @@ import { NextApiRequest } from 'next';
 import { parse } from 'url';
 import http from 'http';
 import cors from 'cors';
+import { error } from 'console';
+import { join } from 'path';
 
 
 const app = express()
@@ -39,9 +41,30 @@ type MesagePayload = {
   channelId : number;
   content : string;
 }
+type DirectMessagePayload = {
+  senderId: number;
+  recieverId: number;
+  content: string;
+};
+
+type JoinDirectMessagePayload = {
+  type: 'joinDirectMessage';
+  re: number;
+};
+
 
 type WebSocketWithChannel = WebSocket & {
     channelId? : Number;
+    recieverId? : Number;
+}
+
+function broadcastToDirectMessage(recieverId: number, message: any) {
+  wss.clients.forEach(client => {
+    const ws = client as WebSocketWithChannel;
+    if (ws.readyState === WebSocket.OPEN && ws.recieverId === recieverId) {
+      ws.send(JSON.stringify(message));
+    }
+  });
 }
 
 function broadcastToCHannel(channelId : number, message : any){
@@ -79,13 +102,20 @@ wss.on('connection', async function connection(ws : WebSocketWithChannel, req : 
 
   ws.on('message', async function message(data : string) {
       console.log('Received data:', data);
-      const messageData : MesagePayload | { type: string; channelId: number } = JSON.parse(data);
+      const messageData : MesagePayload | { type: string; channelId: number } | DirectMessagePayload | JoinDirectMessagePayload = JSON.parse(data);
 
       if ('type' in messageData && messageData.type === 'joinChannel') {
         ws.channelId = messageData.channelId;
         console.log(`User Joined The Channel: ${messageData.channelId}`);
         return; // Exit this handler after processing joinChannel
     }
+
+    if ('type' in messageData && messageData.type === 'joinDirectMessage') {
+      ws.senderId = senderId;
+      console.log(`User Joined Direct Message with ID: ${messageData.recepientId}`);
+      return; // Exit this handler after processing joinDirectMessage
+    }
+
     if ('userId' in messageData){
       const { userId, channelId, content } = messageData;
     
@@ -117,6 +147,28 @@ wss.on('connection', async function connection(ws : WebSocketWithChannel, req : 
         console.error(`Error Saving the message :`, error);
       }
   }
+
+  if ('senderId' in messageData && 'recieverId' in messageData){
+
+    const { senderId, recieverId, content} = messageData;
+
+    try {
+      if ( senderId === undefined || recieverId === undefined){
+        console.error(`sender Id or reciever ID is undefined`);
+      }
+      const newDirectMessage = await prisma.directMessage.create({
+        data : {
+          content,
+          senderId,
+          recieverId,
+        },
+      });
+
+      broadcastToDirectMessage(recieverId, newDirectMessage);
+    } catch(error){
+      console.error(`Failed to broadcast the message`)
+    };
+  }
 });
 
  ws.on(`joinChannel`, function joinCHannel (channelId : number){
@@ -124,6 +176,10 @@ wss.on('connection', async function connection(ws : WebSocketWithChannel, req : 
     ws.channelId = channelId;
     console.log(`User Joined The CHannel : ${channelId}`);
   });
+ ws.on('joinDirectMessage', function joinMessage(recepientId:number) {
+  ws.recieverId = recepientId;
+  console.log(`User Joined the DM with : ${recepientId}`)
+ }) 
 });
 
 app.get('/api/messages/:channelId', async (req : Request, res : Response) => {
@@ -178,5 +234,60 @@ app.get(`/api/channels`, async function (req:Request, res:Response) {
 
     console.error('Error fetching the channels', error);
     res.status(500).json({error : `failed to fetch channels`});
+  }
+});
+
+app.post('/api/direct-messages', async (req: Request, res: Response) => {
+  const { content, senderId, recieverId } = req.body;
+
+  try {
+    const newMessage = await prisma.directMessage.create({
+      data: {
+        content,
+        senderId,
+        recieverId,
+      },
+    });
+    res.json(newMessage);
+  } catch (error) {
+    console.error(`Error creating direct message:`, error);
+    res.status(500).json({ error: 'Failed to create direct message' });
+  }
+});
+
+
+app.get('/api/direct-messages/:userId1/:userId2', async (req: Request, res: Response) => {
+  const { userId1, userId2 } = req.params;
+
+  try {
+    const messages = await prisma.directMessage.findMany({
+      where: {
+        OR: [
+          { senderId: Number(userId1), recieverId: Number(userId2) },
+          { senderId: Number(userId2), recieverId: Number(userId1) },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        sender : true,
+        receiver : true,
+      }
+    });
+    res.json(messages);
+  } catch (error) {
+    console.error(`Error fetching direct messages:`, error);
+    res.status(500).json({ error: 'Failed to fetch direct messages' });
+  }
+});
+
+app.get(`/api/users`, async function (req:Request, res: Response) {
+  
+  try {
+    const users = await prisma.user.findMany();
+    if(!users || users.length === 0){
+      res.json({ msg : `No Users Present`});
+    }
+    else res.json(users);
+  } catch(error){console.error(`Error Fetching the users`, error);
   }
 });
