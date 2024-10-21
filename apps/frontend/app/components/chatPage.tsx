@@ -1,26 +1,29 @@
-"use client"
+"use client";
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import ChannelManager from './createChannel';
-import Chat from './Chat';
-import UserSelector from './userSelector';
+// import Chat from './Chat';
+import Chat from './Chat'
+import UserSelector from './userSelector'; // Ensure this component is imported if you plan to use it
 
 interface ChatPageProps {
   userId: number;
+  recipientId? : number;
 }
-const ChatPage: React.FC<ChatPageProps>= ({ userId }) => {
+
+const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
-  const [selectedUserId,  setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const { data: session, status } = useSession();
 
   const handleChannelSelect = (channelId: number) => {
     setSelectedChannelId(channelId);
-    setSelectedUserId(null);
+    setSelectedUserId(null); // Reset user selection
   };
 
   const handleUserSelect = (userId: number) => {
     setSelectedUserId(userId);
-    setSelectedChannelId(null);
+    setSelectedChannelId(null); // Reset channel selection when a user is selected
   };
 
   if (status === 'loading') {
@@ -35,15 +38,15 @@ const ChatPage: React.FC<ChatPageProps>= ({ userId }) => {
     <div className="flex">
       <div className="w-1/4">
         <ChannelManager onChannelSelect={handleChannelSelect} />
-        <UserSelector onUserSelect={handleUserSelect} /> {/* Add UserSelector */}
+        <UserSelector onUserSelect={handleUserSelect} /> {/* Render UserSelector if needed */}
       </div>
       <div className="w-3/4">
         {selectedChannelId ? (
           <Chat channelId={selectedChannelId} userId={userId} />
         ) : selectedUserId ? (
-          <Chat channelId={null} userId={userId} recepientId={selectedUserId} /> // Pass recipientId for DM
+          <Chat recipientId={selectedUserId} userId={userId} /> // Use recepientId for DMs
         ) : (
-          <div>Select a channel or user to start chatting</div>
+          <div>Select a channel or a user to start chatting</div>
         )}
       </div>
     </div>

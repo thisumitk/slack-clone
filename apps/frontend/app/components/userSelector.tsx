@@ -1,4 +1,3 @@
-// UserSelector.tsx
 import React, { useEffect, useState } from 'react';
 
 interface User {
@@ -14,10 +13,10 @@ const UserSelector: React.FC<UserSelectorProps> = ({ onUserSelect }) => {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    // Fetch users from your backend
     const fetchUsers = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/users'); // Adjust the endpoint accordingly
+        const response = await fetch('https://backend-empty-dawn-4144.fly.dev/api/users');
+        if (!response.ok) throw new Error('Failed to fetch users');
         const data = await response.json();
         setUsers(data);
       } catch (error) {
@@ -29,13 +28,20 @@ const UserSelector: React.FC<UserSelectorProps> = ({ onUserSelect }) => {
   }, []);
 
   return (
-    <div>
-      <h3>Select a user for direct messaging:</h3>
-      {users.map((user) => (
-        <div key={user.id} onClick={() => onUserSelect(user.id)} style={{ cursor: 'pointer' }}>
-          {user.name}
-        </div>
-      ))}
+    <div className="p-4 bg-white border-b border-gray-200">
+      <h3 className="text-lg font-semibold mb-3">Direct Messages</h3>
+      <ul className="overflow-y-auto max-h-80">
+        {users.map((user) => (
+          <li
+            key={user.id}
+            onClick={() => onUserSelect(user.id)}
+            className="cursor-pointer px-3 py-2 hover:bg-blue-100 rounded-md flex items-center"
+          >
+            <span className="mr-2 text-gray-600">•</span>
+            {user.name}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
