@@ -54,7 +54,7 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId, recipientId }) => {
 
       const connectWebSocket = () => {
         
-        ws.current = new WebSocket(`ws://backend-empty-dawn-4144.fly.dev`);
+        ws.current = new WebSocket(`wss://backend-empty-dawn-4144.fly.dev`);
 
         ws.current.onopen = () => {
           console.log('WebSocket connection opened');

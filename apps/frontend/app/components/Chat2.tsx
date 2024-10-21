@@ -35,7 +35,7 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId, recipientId }) => {
 
   useEffect(() => {
     const connectWebSocket = () => {
-      ws.current = new WebSocket(`ws://backend-empty-dawn-4144.fly.dev`);
+      ws.current = new WebSocket(`wss://backend-empty-dawn-4144.fly.dev`);
       ws.current.onopen = () => joinRoom();
       ws.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
