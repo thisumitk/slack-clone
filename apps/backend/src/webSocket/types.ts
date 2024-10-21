@@ -24,7 +24,7 @@ export type JoinDirectMessagePayload = {
 
 export type WebSocketWithInput = WebSocket & {
   channelId?: number;
-  recieverId?: number;
+  receiverId?: number;
 };
 
 export type WebSocketMessage = MessagePayload | DirectMessagePayload | JoinChannelPayload | JoinDirectMessagePayload 

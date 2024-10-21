@@ -93,7 +93,7 @@ export const initializeWebSocket = (server : Server) => {
                         const joinDirectMessagePayload = messageData as JoinDirectMessagePayload;
                         ws.recieverId = joinDirectMessagePayload.recipientId;
                         console.log(joinDirectMessagePayload);
-                        console.log(`User Joined Direct Message with ID: ${joinDirectMessagePayload.recipientId}`);
+                        console.log(`User Joined Direct Message with ID: ${ws.recieverId}`);
                     
                         break;
                         case 'userOnline' :
@@ -131,24 +131,28 @@ export const initializeWebSocket = (server : Server) => {
                         
                 }
             }
-
+                console.log(messageData);
                 if ('userId' in messageData && 'channelId' in messageData) {
+                    console.log(messageData);
                     const { userId, channelId, content } = messageData as MessagePayload;
                     if (userId !== undefined && content !== undefined) {
                         const newMessage = await prisma.message.create({
                             data: { content, userId, channelId },
                             include: { user: true },
                         });
+                        console.log('console reaches channel');
                         broadcastToChannel(wss as WebSocketServer, channelId, newMessage);
                     }
                 }
 
                 if ('senderId' in messageData && 'recieverId' in messageData) {
+                  console.log(messageData);
                     const { senderId, recieverId, content } = messageData as DirectMessagePayload;
                     if (senderId !== undefined && recieverId !== undefined) {
                         const newDirectMessage = await prisma.directMessage.create({
                             data: { content, senderId, recieverId },
                         });
+                        console.log('console reaches DM')
                         broadcastToDirectMessage(wss as WebSocketServer, recieverId, newDirectMessage);
                     }
                 }

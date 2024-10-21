@@ -58,7 +58,7 @@ router.get('/api/direct-messages/:userId1/:userId2', async (req: Request, res: R
       orderBy: { createdAt: 'asc' },
       include: {
         sender : true,
-        receiver : true,
+        reciever : true,
       }
     });
     res.json(messages);
