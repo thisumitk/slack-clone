@@ -53,5 +53,5 @@ model DirectMessage {
   createdAt   DateTime @default(now())
 
   sender    User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver  User @relation("ReceivedMessages", fields: [recieverId], references: [id])
+  reciever  User @relation("ReceivedMessages", fields: [recieverId], references: [id])
 }
