@@ -5,10 +5,10 @@ interface DirectMessage {
   id: number;
   content: string;
   senderId: number;
-  receiverId: number;
+  recieverId: number;
   createdAt: Date;
   sender: { name: string };
-  receiver: { name: string };
+  reciever: { name: string };
 }
 
 interface Message {
@@ -128,7 +128,7 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId, recipientId }) => {
       const messageData = isDirectMessage
         ? {
             senderId: userId,
-            receiverId: recipientId,
+            recieverId: recipientId,
             content: message.trim(),
           }
         : {

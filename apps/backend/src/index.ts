@@ -8,7 +8,16 @@ import { initializeWebSocket } from './webSocket/index.js';
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: (origin, callback) => {
+    const allowedOrigins = ['http://localhost:3000'
+      , 'https://slack-clone-frontend-iota.vercel.app'
+      , 'https://slacko.thisumitk.com'];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
 }));
 app.use(express.json());
 app.use('/', channelsRouter);
@@ -19,7 +28,7 @@ app.use('/', usersRouter);
 const server = http.createServer(app);
 const wss = initializeWebSocket(server);
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);

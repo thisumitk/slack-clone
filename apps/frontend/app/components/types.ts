@@ -2,10 +2,10 @@ export interface DirectMessage {
   id: number;
   content: string;
   senderId: number;
-  receiverId: number;
+  recieverId: number;
   createdAt: Date;
   sender: { name: string };
-  receiver: { name: string };
+  reciever: { name: string };
 }
 
 export interface Message {

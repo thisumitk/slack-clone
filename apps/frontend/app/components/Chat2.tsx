@@ -57,7 +57,7 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId, recipientId }) => {
   const sendMessage = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const messageData = isDirectMessage
-        ? { senderId: userId, receiverId: recipientId, content: message.trim() }
+        ? { senderId: userId, recieverId: recipientId, content: message.trim() }
         : { userId, channelId, content: message.trim() };
 
       ws.current.send(JSON.stringify(messageData));
