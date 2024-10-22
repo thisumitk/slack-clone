@@ -236,6 +236,12 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId, recipientId }) => {
             setMessage(e.target.value);
             handleTyping();
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && message.trim()) {
+              sendMessage();
+              setMessage(''); // Clear the input after sending
+            }
+          }}
           placeholder="Type a message..."
           className="flex-1 px-4 py-2 border rounded-md focus:outline-none"
         />
