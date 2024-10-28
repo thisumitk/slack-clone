@@ -138,10 +138,11 @@ export const initializeWebSocket = (server : Server) => {
             }
                 console.log(messageData);
                 if ('userId' in messageData && 'channelId' in messageData) {
-
+                
                     const { userId, channelId, content } = messageData as MessagePayload;
                     if (userId !== undefined && content !== undefined) {
-                        const newMessage = { content, userId, channelId, createdAt: new Date() };
+                        const user = await prisma.user.findUnique({where : {id : userId}});
+                        const newMessage = { content, userId, channelId, createdAt: new Date(), user};
                             broadcastToChannel(wss, channelId, newMessage);
                         
                             prisma.message.create({
@@ -154,8 +155,8 @@ export const initializeWebSocket = (server : Server) => {
                 if ('senderId' in messageData && 'recieverId' in messageData) {
                     const { senderId, recieverId, content } = messageData as DirectMessagePayload;
                     if (senderId !== undefined && recieverId !== undefined) {
-
-                      const newDirectMessage = { content, senderId, recieverId, createdAt: new Date() };
+                      const sender = await prisma.user.findUnique({where : { id : senderId}});
+                      const newDirectMessage = { content, senderId, recieverId, createdAt: new Date(), sender };
                       broadcastToDirectMessage(wss as WebSocketServer, senderId, recieverId, newDirectMessage);
 
                       prisma.directMessage.create({
