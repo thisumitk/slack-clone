@@ -31,8 +31,8 @@ model Message {
   createdAt  DateTime  @default(now())
   userId    Int
   channelId Int
-  channel   Channel  @relation(fields: [channelId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
 }
 
@@ -52,6 +52,6 @@ model DirectMessage {
   recieverId  Int
   createdAt   DateTime @default(now())
 
-  sender    User @relation("SentMessages", fields: [senderId], references: [id])
-  reciever  User @relation("ReceivedMessages", fields: [recieverId], references: [id])
+  sender    User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  reciever  User @relation("ReceivedMessages", fields: [recieverId], references: [id], onDelete: Cascade)
 }
