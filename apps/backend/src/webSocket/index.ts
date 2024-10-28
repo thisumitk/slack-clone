@@ -21,7 +21,6 @@ type WebSocketWithChannel = WebSocket & {
 
 const onlineUsers = new Set<number>();
 const typingUsers = new Map<number, Set<number>>();
-
 const broadcastToChannel = (wss: WebSocketServer, channelId: number, message: any) => {
     wss.clients.forEach(client => {
       const ws = client as WebSocketWithChannel;
