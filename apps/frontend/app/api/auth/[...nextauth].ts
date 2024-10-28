@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import prisma from "@repo/db/prisma";
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcrypt";
