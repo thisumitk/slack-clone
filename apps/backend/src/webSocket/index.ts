@@ -11,6 +11,7 @@ import {
     MessagePayload,
     DirectMessagePayload
 } from './types.js';
+import { error } from 'console';
 
 type WebSocketWithChannel = WebSocket & {
     channelId?: number;
@@ -137,28 +138,31 @@ export const initializeWebSocket = (server : Server) => {
             }
                 console.log(messageData);
                 if ('userId' in messageData && 'channelId' in messageData) {
-                    console.log(messageData);
+
                     const { userId, channelId, content } = messageData as MessagePayload;
                     if (userId !== undefined && content !== undefined) {
-                        const newMessage = await prisma.message.create({
+                        const newMessage = { content, userId, channelId, createdAt: new Date() };
+                            broadcastToChannel(wss, channelId, newMessage);
+                        
+                            prisma.message.create({
                             data: { content, userId, channelId },
                             include: { user: true },
-                        });
-                        console.log('console reaches channel');
-                        broadcastToChannel(wss as WebSocketServer, channelId, newMessage);
+                        }).catch(error => console.error('Error SaVING IN DB', error)); 
                     }
                 }
 
                 if ('senderId' in messageData && 'recieverId' in messageData) {
-                  console.log(messageData);
                     const { senderId, recieverId, content } = messageData as DirectMessagePayload;
                     if (senderId !== undefined && recieverId !== undefined) {
-                        const newDirectMessage = await prisma.directMessage.create({
+
+                      const newDirectMessage = { content, senderId, recieverId, createdAt: new Date() };
+                      broadcastToDirectMessage(wss as WebSocketServer, senderId, recieverId, newDirectMessage);
+
+                      prisma.directMessage.create({
                             data: { content, senderId, recieverId },
                             include : { sender: true}
-                        });
-                        console.log('console reaches DM')
-                        broadcastToDirectMessage(wss as WebSocketServer, senderId, recieverId, newDirectMessage);
+                        }).catch(error => console.error('Error saving dm to DB:', error));
+        
                     }
                 }
             } catch (error) {
