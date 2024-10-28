@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
 
 interface DirectMessage {
   id: number;
@@ -106,12 +107,22 @@ const Chat: React.FC<ChatProps> = ({ channelId, userId, recipientId }) => {
   useEffect(() => {
     // Fetch messages when switching channels or DMs
     const fetchMessages = async () => {
+
+      const session = await getSession();
+      const accessToken = session?.accessToken;
+  
       const endpoint = isDirectMessage
         ? `https://backend-empty-dawn-4144.fly.dev/api/direct-messages/${userId}/${recipientId}`
         : `https://backend-empty-dawn-4144.fly.dev/api/messages/${channelId}`;
 
       try {
-        const res = await fetch(endpoint);
+        const res = await fetch(endpoint, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
         if (!res.ok) throw new Error('Failed to fetch messages');
         const data = await res.json();
         setMessages(data);

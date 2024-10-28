@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getSession } from 'next-auth/react';
 
 interface Channel {
   id: number;
@@ -18,8 +19,17 @@ const ChannelManager: React.FC<ChannelManagerProps> = ({ onChannelSelect }) => {
   }, []);
 
   const fetchChannels = async () => {
+
+    const session = await getSession();
+    const accessToken = session?.accessToken;
+
     try {
-      const response = await fetch('https://backend-empty-dawn-4144.fly.dev/api/channels');
+      const response = await fetch('https://backend-empty-dawn-4144.fly.dev/api/channels', {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       if (!response.ok) throw new Error('Failed to fetch channels');
       const data = await response.json();
       setChannels(data);
@@ -30,11 +40,14 @@ const ChannelManager: React.FC<ChannelManagerProps> = ({ onChannelSelect }) => {
 
   const createChannel = async () => {
     if (!channelName.trim()) return;
+    const session = await getSession();
+    const accessToken = session?.accessToken;
     try {
       const response = await fetch('https://backend-empty-dawn-4144.fly.dev/api/channels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ name: channelName.trim() }),
       });

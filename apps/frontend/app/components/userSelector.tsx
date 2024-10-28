@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getSession } from 'next-auth/react';
 
 interface User {
   id: number;
@@ -14,8 +15,18 @@ const UserSelector: React.FC<UserSelectorProps> = ({ onUserSelect }) => {
 
   useEffect(() => {
     const fetchUsers = async () => {
+
+      const session = await getSession();
+      const accessToken = session?.accessToken;
+
       try {
-        const response = await fetch('https://backend-empty-dawn-4144.fly.dev/api/users');
+        const response = await fetch('https://backend-empty-dawn-4144.fly.dev/api/users', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+        );
         if (!response.ok) throw new Error('Failed to fetch users');
         const data = await response.json();
         setUsers(data);
