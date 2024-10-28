@@ -20,6 +20,7 @@ export type JoinChannelPayload = {
 export type JoinDirectMessagePayload = {
   type: 'joinDirectMessage';
   recipientId: number;
+  userId: number;
 };
 
 export type WebSocketWithInput = WebSocket & {

@@ -38,14 +38,14 @@ async function main() {
   // Create or retrieve channels
   const channels = await Promise.all([
     prisma.channel.upsert({
-      where: { id: 1 }, // Assuming id 1 for "General" (if it exists)
+      where: { id: 1 },
       update: {},
       create: {
         name: 'General',
       },
     }),
     prisma.channel.upsert({
-      where: { id: 2 }, // Assuming id 2 for "Tech" (if it exists)
+      where: { id: 2 },
       update: {},
       create: {
         name: 'Tech',

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-case-declarations */
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
 import prisma from '../prisma/client.js';
@@ -27,10 +30,10 @@ const broadcastToChannel = (wss: WebSocketServer, channelId: number, message: an
     });
   };
   
-  const broadcastToDirectMessage = (wss: WebSocketServer, recieverId: number, message: any) => {
+  const broadcastToDirectMessage = (wss: WebSocketServer, senderId : number, recieverId: number, message: any) => {
     wss.clients.forEach(client => {
       const ws = client as WebSocketWithChannel;
-      if (ws.readyState === WebSocket.OPEN && ws.recieverId === recieverId) {
+      if (ws.readyState === WebSocket.OPEN && (ws.userId === senderId || ws.userId === recieverId)) {
         ws.send(JSON.stringify(message));
       }
     });
@@ -48,8 +51,8 @@ const broadcastOnlineStatus = (wss: WebSocketServer) => {
     });
   };
 
-  const broadcastTypingStatus = (wss: WebSocketServer, channelId?: number, recieverId?: number) => {
-    if (channelId !== undefined || recieverId !== undefined) {
+  const broadcastTypingStatus = (wss: WebSocketServer, channelId?: number, recieverId?: number, senderId?: number) => {
+    if (channelId !== undefined || recieverId !== undefined || senderId !== undefined) {
       const id = channelId ?? recieverId;
       if (id !== undefined) {
         const typingUsersSet = typingUsers.get(id) ?? new Set();
@@ -62,8 +65,8 @@ const broadcastOnlineStatus = (wss: WebSocketServer) => {
   
         if (channelId !== undefined) {
           broadcastToChannel(wss, channelId, typingStatusMessage);
-        } else if (recieverId !== undefined) {
-          broadcastToDirectMessage(wss, recieverId, typingStatusMessage);
+        } else if (recieverId !== undefined && senderId !== undefined) {
+          broadcastToDirectMessage(wss, recieverId, senderId, typingStatusMessage);
         }
       }
     }
@@ -92,8 +95,9 @@ export const initializeWebSocket = (server : Server) => {
                         case 'joinDirectMessage' :
                         const joinDirectMessagePayload = messageData as JoinDirectMessagePayload;
                         ws.recieverId = joinDirectMessagePayload.recipientId;
+                        ws.userId = joinDirectMessagePayload.userId;
                         console.log(joinDirectMessagePayload);
-                        console.log(`User Joined Direct Message with ID: ${ws.recieverId}`);
+                        console.log(`User ${ws.userId} Joined Direct Message with ID: ${ws.recieverId}`);
                     
                         break;
                         case 'userOnline' :
@@ -151,9 +155,10 @@ export const initializeWebSocket = (server : Server) => {
                     if (senderId !== undefined && recieverId !== undefined) {
                         const newDirectMessage = await prisma.directMessage.create({
                             data: { content, senderId, recieverId },
+                            include : { sender: true}
                         });
                         console.log('console reaches DM')
-                        broadcastToDirectMessage(wss as WebSocketServer, recieverId, newDirectMessage);
+                        broadcastToDirectMessage(wss as WebSocketServer, senderId, recieverId, newDirectMessage);
                     }
                 }
             } catch (error) {
