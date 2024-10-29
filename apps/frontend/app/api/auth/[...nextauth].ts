@@ -24,6 +24,14 @@ const signUpSchema = signInSchema.extend({
         .refine(name => name.length > 0, "Name cannot be empty"),
 });
 
+const refreshAccessToken = (userId: string, email: string) => {
+  return jwt.sign(
+      { id: userId, email },
+      process.env.JWT_SECRET || 'mysecret',
+      { expiresIn: '1h' }
+  );
+};
+
 export const authOptions = {
     providers: [
         CredentialsProvider({
@@ -63,7 +71,8 @@ export const authOptions = {
                             id: existingUser.id.toString(),
                             name: existingUser.name,
                             email: existingUser.email,
-                            accessToken: token
+                            accessToken: token,
+                            accessTokenExpires: Date.now() + 60 * 60 * 1000
                         }
                     }
                     console.error("Invalid password for user:", email);
@@ -96,7 +105,8 @@ export const authOptions = {
                         id: user.id.toString(),
                         name: user.name,
                         email: user.email,
-                        accessToken: token
+                        accessToken: token,
+                        accessTokenExpires: Date.now() + 60 * 60 * 1000
                     }
                 } catch (e) {
                     console.error(e);
@@ -108,13 +118,28 @@ export const authOptions = {
     ],
 
     callbacks: {
-        async jwt({ token, user }: { token: JWT; user?: User }) {
+        async jwt({ token, user }: { token: JWT & {
+          accessTokenExpires? : number}; 
+          user?: User & {accessToken?: string; accessTokenExpires? : number;
+
+          } }) {
+
             if (user) {
                 token.id = user.id;
                 token.email = user.email;
                 token.name = user.name;
                 token.accessToken = user.accessToken
+                token.accessTokenExpires = user.accessTokenExpires
+                return token;
             }
+
+            if (token?.accessTokenExpires && Date.now() < token.accessTokenExpires) {
+                return token;
+            }
+
+            token.accessToken = refreshAccessToken(token.id as string, token.email as string);
+            token.accessTokenExpires = Date.now() + 60 * 60 * 1000;
+            
             return token;
         },
         async session({ token, session }: { token: JWT; session: Session }) {
@@ -123,7 +148,6 @@ export const authOptions = {
                 session.user.email = token.email as string;
                 session.user.name = token.name as string;
                 session.accessToken = token.accessToken as string;
-                console.log(session);
             }
             return session;
         }
